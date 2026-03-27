@@ -18,6 +18,16 @@ LLoom Agent transforms natural language problem descriptions into fully verified
 - [uv](https://github.com/astral-sh/uv) - Python package manager
 - [elan](https://github.com/leanprover/elan) - Lean version manager
 
+## Setup
+
+From the repository root, run the repository-level setup script:
+
+```bash
+bash setup.sh
+```
+
+This installs Python dependencies for `leetproof/`, builds the Lean project in `llmgen-experiment/`, and downloads the search/model assets.
+
 ## Configuration
 
 Set your LLM provider API key:
@@ -27,4 +37,3 @@ Set your LLM provider API key:
 export ANTHROPIC_API_KEY="your-key"
 export OPENAI_API_KEY="your-key"
 ```
-

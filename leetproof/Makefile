@@ -15,7 +15,7 @@ help:
 
 # Full setup from fresh clone
 setup:
-	./setup.sh
+	bash ../setup.sh
 
 # Install dependencies
 install:
