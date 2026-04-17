@@ -1110,7 +1110,15 @@ If everything typechecks, then only, it's loaded to the environment.\n
                 completely_failed_subgoals=completely_failed,
             )
 
-            assert assembly_result["success"], "Assembly should never fail"
+            if not assembly_result["success"]:
+                all_failures.append(FailureInfo(
+                    phase="assembly",
+                    goal_name=ctx.goal_name,
+                    depth=depth,
+                    error=assembly_result["error"],
+                    attempted_proof=assembled_sketch,
+                ))
+
             has_sorry_in_result = has_any_sorry or not assembly_result["success"]
 
             if has_sorry_in_result:

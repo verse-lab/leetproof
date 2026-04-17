@@ -141,3 +141,38 @@ end Proof
     assert content.count("lemma helper_progress : True := by") == 1
     assert content.count("theorem main_goal") == 1
     assert "sorry" in content
+
+
+def test_build_assembly_fallback_proof_comments_failed_attempt():
+    goal = Goal(
+        name="main_goal",
+        params=[Param(name="h", ty="True")],
+        final_goal="True",
+    )
+    ctx = _make_ctx("/tmp/progress.lean", goal, pending_lemma_blocks=[])
+    attempted = """theorem main_goal
+    (h : True)
+    : True := by
+  exact False.elim ?h
+"""
+    build_result = LakeBuildResult(
+        typechecks=False,
+        diagnostics=[
+            LeanDiagnostic(
+                severity="error",
+                message="Application type mismatch",
+                line=4,
+                column=3,
+                line_content="  exact False.elim ?h",
+            )
+        ],
+    )
+
+    fallback = ProverAgent._build_assembly_fallback_proof(ctx, attempted, build_result)
+
+    assert fallback.startswith(goal.as_sorried())
+    assert "\n\n-- ASSEMBLY FALLBACK: attempted assembled proof did not typecheck." in fallback
+    assert "-- Attempted assembled proof:" in fallback
+    assert "-- theorem main_goal" in fallback
+    assert "-- Diagnostics:" in fallback
+    assert "-- Message: Application type mismatch" in fallback

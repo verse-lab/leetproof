@@ -1,4 +1,4 @@
-
+> NOTE: There might be some programs (proven by Aristotle) that may not work in the current Lean environment, but they do work in Lean v4.28 Lean with mathlib.
 
 ## 986 ImplAristotleProof works fine on live.lean-lang.org
 

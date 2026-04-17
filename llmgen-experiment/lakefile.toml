@@ -4,7 +4,7 @@ defaultTargets = ["Extensions"]
 
 [[require]]
 name = "Velvet"
-git = "https://github.com/verse-lab/velvet-dev"
+git = "https://github.com/verse-lab/velvet"
 rev = "9a61202"
 
 [[lean_lib]]

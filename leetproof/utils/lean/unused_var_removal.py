@@ -359,4 +359,3 @@ async def minimize_goal(
     )
 
     return minimized
-

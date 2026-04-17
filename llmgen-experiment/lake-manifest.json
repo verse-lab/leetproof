@@ -1,7 +1,7 @@
 {"version": "1.1.0",
  "packagesDir": ".lake/packages",
  "packages":
- [{"url": "https://github.com/verse-lab/velvet-dev",
+ [{"url": "https://github.com/verse-lab/velvet",
    "type": "git",
    "subDir": null,
    "scope": "",

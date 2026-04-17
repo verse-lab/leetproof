@@ -374,8 +374,16 @@ class ProverAgent(BaseAgent):
                     completely_failed_subgoals=completely_failed,
                 )
 
+                if not assembly_result["success"]:
+                    all_failures.append(FailureInfo(
+                        phase="assembly",
+                        goal_name=ctx.goal_name,
+                        depth=depth,
+                        error=assembly_result["error"],
+                        attempted_proof=assembled_sketch,
+                    ))
+
                 has_failures = has_any_sorry or not assembly_result["success"]
-                assert assembly_result["success"], "Assembly should never fail given the way we're doing it"
                 has_sorry_in_result = has_failures
                 if has_failures:
                     sorry_count = sum(1 for o in subgoal_outcomes if not o.success)
@@ -1393,7 +1401,28 @@ Please regenerate the proof sketch using mathematically valid subgoals.""",
         logger.info(f"  FINAL PROOF:\n{'-' * 80}\n{final_proof}\n{'-' * 80}")
 
         typecheck_result = await self._get_pantograph(ctx).check_build(assembled_sketch)
-        typecheck_result.assert_typechecks("Proof assembly should always succeed")
+        if not typecheck_result.typechecks:
+            error = (
+                typecheck_result.as_string(["error"])
+                or typecheck_result.as_string()
+                or typecheck_result.build_log
+                or "Assembled proof failed to typecheck with no diagnostics."
+            )
+            logger.warning(
+                "  Final proof assembly for %s failed to typecheck; preserving sorried fallback.\n%s",
+                ctx.goal_name,
+                error,
+            )
+            return {
+                "success": False,
+                "content": "",
+                "error": error,
+                "proof": self._build_assembly_fallback_proof(
+                    ctx,
+                    assembled_sketch,
+                    typecheck_result,
+                ),
+            }
 
         # NOTE: Don't write to file here - _finalize_result handles the file write
         # after unused variable removal
@@ -1405,6 +1434,41 @@ Please regenerate the proof sketch using mathematically valid subgoals.""",
             "error": "",
             "proof": final_proof,
         }
+
+    @staticmethod
+    def _line_comment_block(content: str) -> str:
+        """Format arbitrary text as Lean-safe `--` line comments."""
+        lines = content.splitlines() or [""]
+        return "\n".join(f"-- {line}" if line else "--" for line in lines)
+
+    @classmethod
+    def _build_assembly_fallback_proof(
+        cls,
+        ctx: ProvingContext,
+        assembled_sketch: str,
+        build_result: LakeBuildResult,
+    ) -> str:
+        """Preserve a failed assembled proof as comments after a sorried theorem."""
+        diagnostics = (
+            build_result.as_string(["error"])
+            or build_result.as_string()
+            or build_result.build_log
+            or "(no diagnostics)"
+        ).strip()
+        commented_attempt = cls._line_comment_block(
+            "\n".join(
+                [
+                    "ASSEMBLY FALLBACK: attempted assembled proof did not typecheck.",
+                    "",
+                    "Attempted assembled proof:",
+                    assembled_sketch.rstrip(),
+                    "",
+                    "Diagnostics:",
+                    diagnostics,
+                ]
+            ).rstrip()
+        )
+        return f"{ctx.goal_theorem}\n\n{commented_attempt}"
 
     @staticmethod
     def _typecheck_error_feedback(lean_code: str, build_result: LakeBuildResult) -> str:
