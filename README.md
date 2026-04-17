@@ -101,3 +101,7 @@ bash ./leetproof.sh lean-synth \
 ```
 
 **NOTE**: If you want to add a max-cost on any of these runs, you can append `--max-cost 5` flag to limit at `5$`.
+
+**NOTE**: The max-cost feature requires having the pricing information for the provider+model in `leetproof/config/model_pricing.json`, and it might not have the 
+pricing for all models. We currently only have it for a few of them. One can easily add the pricing configuration there to make max-cost work with their model of
+choice.
