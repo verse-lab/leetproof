@@ -1,0 +1,13 @@
+.git
+**/.git
+**/.lake
+**/.lloom
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.DS_Store
+artifact-data
+build
+dist
+output
+*.zip

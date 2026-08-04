@@ -20,6 +20,9 @@ Inside the directory, the artefacts are split across the following directories.
 
 ### Running LeetProof
 
+For the containerized artifact-evaluation workflow, including no-key smoke
+tests and host-persisted pipeline outputs, see [DOCKER.md](DOCKER.md).
+
 #### Setup
 Run the setup script from the repository root:
 
@@ -100,8 +103,19 @@ bash ./leetproof.sh lean-synth \
   --model <model>
 ```
 
-**NOTE**: If you want to add a max-cost on any of these runs, you can append `--max-cost 5` flag to limit at `5$`.
+#### Cost limits and supported pricing
 
-**NOTE**: The max-cost feature requires having the pricing information for the provider+model in `leetproof/config/model_pricing.json`, and it might not have the 
-pricing for all models. We currently only have it for a few of them. One can easily add the pricing configuration there to make max-cost work with their model of
-choice.
+Append `--max-cost 5` to stop a run when its tracked provider cost reaches five
+US dollars. Cost limits work only when the selected model matches an entry in
+`leetproof/config/model_pricing.json` (dated model IDs are matched by prefix).
+
+Pricing is configured for these model families:
+
+- OpenAI: `gpt-5.6`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`,
+  `gpt-5.4`, `gpt-5.2`, and `gpt-5.1`.
+- Anthropic: `claude-opus-5`, `claude-opus-4-8`, `claude-opus-4-7`,
+  `claude-opus-4-6`, `claude-opus-4-5`, `claude-sonnet-5`,
+  `claude-sonnet-4-6`, `claude-sonnet-4-5`, and `claude-haiku-4-5`.
+
+For any other model, token usage can still be reported, but `--max-cost` cannot
+reliably calculate or enforce a dollar limit until its pricing is added.
