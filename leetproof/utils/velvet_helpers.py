@@ -722,7 +722,7 @@ async def extract_goals_after_loom_solve(
     prove_block = get_prove_correct_block(method).strip()
 
     # Inject temporary proof snippet for goal extraction.
-    proof_parts = [SET_MAX_HEARTBEATS]
+    proof_parts = [SET_MAX_HEARTBEATS, "set_option pp.funBinderTypes true"]
     if proof_prelude.strip():
         proof_parts.append(proof_prelude.strip())
     if hints_block:

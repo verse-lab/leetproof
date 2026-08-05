@@ -19,23 +19,16 @@ sessions remain in the artifact directory after a container exits.
 From the artifact root:
 
 ```bash
-docker compose build lloom
-docker compose run --rm lloom pipeline --print-graph
-docker compose run --rm --entrypoint sh lloom -c 'lean --version && lake build'
-docker compose run --rm lloom search --info
-```
-
-The pipeline smoke test should print:
-
-```text
-Pipeline stages: specgen -> codegen -> invgen -> verify
+docker compose build leetproof
+docker compose run --rm --entrypoint sh leetproof -c 'lean --version && lake build'
+docker compose run --rm leetproof search --info
 ```
 
 On Linux, build with your host UID and GID if they are not 1000, so generated
 files remain editable outside Docker:
 
 ```bash
-LLOOM_UID="$(id -u)" LLOOM_GID="$(id -g)" docker compose build lloom
+LLOOM_UID="$(id -u)" LLOOM_GID="$(id -g)" docker compose build leetproof
 ```
 
 ## One-time semantic-search setup
@@ -44,7 +37,7 @@ The full pipeline uses LeanExplore plus the BGE embedding model. Download these
 assets once with:
 
 ```bash
-docker compose run --rm lloom setup
+docker compose run --rm leetproof setup
 ```
 
 LeanExplore writes to `/home/lloom/.lean_explore`, while Hugging Face writes the
@@ -55,8 +48,8 @@ containers reuse both downloads.
 You can verify persistence without invoking an LLM:
 
 ```bash
-docker compose run --rm lloom search --info
-docker compose run --rm lloom search "commutativity of addition" --limit 3 --no-verify
+docker compose run --rm leetproof search --info
+docker compose run --rm leetproof search "commutativity of addition" --limit 3 --no-verify
 ```
 
 The initial setup downloads roughly 8.5 GB. For an entirely offline artifact,
@@ -75,7 +68,7 @@ export OPENAI_API_KEY="..."
 Then run from the artifact root:
 
 ```bash
-docker compose run --rm lloom pipeline \
+docker compose run --rm leetproof pipeline \
   --input-file sliding_window_maximum.txt \
   --output-file llmgen/SmokeTests/SlidingWindowMaximum/Spec.lean \
   --end specgen \

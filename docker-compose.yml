@@ -1,5 +1,5 @@
 services:
-  lloom:
+  leetproof:
     image: lloom-ase2026-artifact:latest
     build:
       context: .

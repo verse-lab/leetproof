@@ -126,8 +126,10 @@ class ProverAgent(BaseAgent):
         if isinstance(sections, str):
             sections = [sections]
         lean_file = LeanFile.from_path(ctx.file_path)
-        content = "\n\n".join([ lean_file.get_section(section,assert_exists=True).full_text() for section in sections  ])
-        return await (ProverAgent._get_pantograph(ctx)).load_definitions(ctx.pantograph.key, content)
+        pantograph = ProverAgent._get_pantograph(ctx)
+        for section in sections:
+            content = lean_file.get_section(section, assert_exists=True).full_text()
+            await pantograph.load_definitions(ctx.pantograph.key, content)
 
     @DBOS.step()
     async def _discover_hints(self, ctx: ProvingContext):

@@ -27,9 +27,10 @@ fi
 # LLoom resolves relative inputs, outputs, logs, and sessions after changing to
 # --project. Inject the mounted project so all those files persist on the host.
 case "$1" in
-    pipeline)
+    pipeline|lean-synth)
+        subcommand="$1"
         shift
-        set -- pipeline --project "${project_dir}" "$@"
+        set -- "${subcommand}" --project "${project_dir}" "$@"
         ;;
     -*)
         set -- --project "${project_dir}" "$@"

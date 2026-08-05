@@ -279,12 +279,23 @@ class PantographClient:
         if not lean_code.strip():
             return
 
-        logger.info(f"[Pantograph] Loading definitions for key '{key}':\n{lean_code}")
+        load_entry = (key, lean_code)
+
+        async def load_if_needed(server: Server) -> None:
+            if load_entry in self._load_log:
+                logger.info(
+                    "[Pantograph] Skipping duplicate definitions for key '%s'",
+                    key,
+                )
+                return
+            logger.info(f"[Pantograph] Loading definitions for key '{key}':\n{lean_code}")
+            await server.load_definitions_async(lean_code)
+            self._load_log.append(load_entry)
+
         await self._run_with_server_recovery(
-            lambda server: server.load_definitions_async(lean_code),
+            load_if_needed,
             op_name=f"load_definitions[{key}]",
         )
-        self._load_log.append((key, lean_code))
 
     async def load_and_discover_constants(self, key: str, lean_code: str) -> Tuple[LakeBuildResult | None, list[str]]:
         """Load definitions into env AND return names of newly introduced constants.

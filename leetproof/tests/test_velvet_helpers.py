@@ -867,11 +867,13 @@ end Impl
         assert len(result.goals) == 1
         assert result.goals[0].final_goal == "x = x"
         assert len(seen_contents) == 3
+        assert all("set_option pp.funBinderTypes true" in content for content in seen_contents)
         assert 'set_option loom.solver "custom"' not in seen_contents[0]
         assert "gen := 4" in seen_contents[1]
         assert "gen := 2" in seen_contents[2]
         assert "gen := 1" not in seen_contents[2]
         cleaned = Path(output_file).read_text()
+        assert "set_option pp.funBinderTypes true" not in cleaned
         assert 'set_option loom.solver "custom"' not in cleaned
         assert "macro_rules" not in cleaned
         assert "prove_correct foo by" not in cleaned

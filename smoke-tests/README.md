@@ -1,8 +1,7 @@
 # Agent smoke tests
 
-`run.py` provides three synthesis workflows over three bundled problems from
-`llmgen/problems/`. Run `--help` to see every problem, workflow, option, and
-example:
+`run.py` provides three synthesis workflows over bundled or custom problems.
+Run `--help` to see every problem, workflow, option, and example:
 
 ```bash
 ./smoke-tests/run.py --help
@@ -38,6 +37,33 @@ in this order:
 
 This makes `spec` followed by `velvet` or `lean` a natural chained workflow,
 while keeping every synthesis workflow independently runnable.
+
+## Custom programs
+
+Use `--custom-program` with a stable slug and provide the corresponding title,
+problem-description path, and output directory name:
+
+```bash
+./smoke-tests/run.py \
+  --custom-program pair-sum \
+  --custom-title "Pair Sum" \
+  --custom-description llmgen/custom/pair-sum/problem.md \
+  --custom-output-name PairSum \
+  --workflow lean
+```
+
+Custom paths are relative to `llmgen-experiment/`. For a custom `velvet` or
+`lean` workflow, the launcher first runs specification generation from the
+provided `problem.md`, writing:
+
+```text
+llmgen/SmokeTests/<CustomOutputName>/Spec.lean
+```
+
+It then feeds that generated specification into the requested workflow. The
+preliminary specification run has its own `--spec-max-cost` cap, which defaults
+to $1; `--max-cost` controls the requested Velvet or Lean run. A custom `spec`
+workflow runs only specification generation.
 
 ## Output convention
 
