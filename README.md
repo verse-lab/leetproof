@@ -3,20 +3,14 @@
 This directory contains two subdirectories.
 
 - **leetproof** : This has the code for the tool.
-- **llmgen-experiment**: This has the artefact of all the results submitted as part of the paper.
+- **llmgen-experiment**: This contains some extensions to Loom itself and the
+  experiment results. See the final section for the results.
 
 ### llmgen-experiment
 
-Inside the directory, the artefacts are split across the following directories.
-
-- **VerinaSpecEquivCheck**  : This has the results of spec equivalence done using Aristotle.
-- **SpecPBTResult** : This is from our runs of PBT on specification on CLEVER and Verina benchmarks.
-- **verina_feedback.pdf** : This is the report sent for problems found in the Verina benchmarks.
-- **clever_feedback.pdf**: This is the report sent for problems found in the CLEVER benchmarks.
-- **llmgen/gpt_result** : Contains all the programs generated using GPT 5.2.
-- **llmgen/opus_result** : Contains all the programs generated using Opus 4.6.
-- **llmgen/problems**: Contains all the problem description and the specification we generated for them.
-- **Extensions** : This contains all the Lean programs (extensions) we used for our experiments (example: PBT).
+This directory contains some extensions to Loom itself
+(`llmgen-experiment/Extensions/`) and the artefacts used to produce the paper's
+results. See the final section for the complete run results.
 
 ### Running LeetProof
 
@@ -193,3 +187,54 @@ Pricing is configured for these model families:
 
 For any other model, token usage can still be reported, but `--max-cost` cannot
 reliably calculate or enforce a dollar limit until its pricing is added.
+
+## Paper Figures and Non-executable Data
+
+This section includes non-executable materials, including Loom extensions and run
+results.
+
+### 1. SpecPBT results (`Table 1`)
+
+The data for **Table 1: Specification issues discovered in published benchmark
+sets for vericoding in Lean** is produced by SpecPBT checks on the Verina and
+Clever benchmark suites, documenting under-specified specification findings.
+
+Evidence and outputs:
+`llmgen-experiment/verina_feedback.pdf`, `llmgen-experiment/clever_feedback.pdf`,
+`llmgen-experiment/SpecPBTResult/Verina`, and
+`llmgen-experiment/SpecPBTResult/Clever`.
+
+### 2. Aristotle differential testing (`RQ1`)
+
+For `RQ1`, we ran differential testing with `Aristotle` between:
+
+- our generated Verina specifications, and
+- the reference specifications in the Verina benchmark.
+
+The corresponding artifact directory is
+`llmgen-experiment/VerinaSpecEquivCheck/`, which contains the equivalence check
+results and proof artifacts produced by `Aristotle`.
+
+### 3. Benchmark (Section 6.1)
+
+The benchmark used in Section 6.1 is a 50-problem LeetCode subset:
+
+The set contains 50 problems, with a fixed split documented in
+`llmgen-experiment/llmgen/problems/REPORT.md` (**15 development, 35 evaluation**).
+
+Supporting benchmark files:
+
+- `llmgen-experiment/llmgen/problems/` and `llmgen-experiment/llmgen/problems/REPORT.md`.
+- `llmgen-experiment/problems-stats.json` (evaluation outcomes for the 50-item set).
+
+### 4. Sections 6.2--6.4 run results
+
+Complete results for Sections 6.2 through 6.4 are collected in `llmgen-experiment/llmgen`:
+
+- `llmgen-experiment/llmgen/gpt_result/`: `gpt-5.2` run outputs.
+- `llmgen-experiment/llmgen/opus_result/`: `opus4.6` run outputs.
+
+### Feedback reports
+
+- [Verina feedback report](llmgen-experiment/verina_feedback.pdf)
+- [CLEVER feedback report](llmgen-experiment/clever_feedback.pdf)
