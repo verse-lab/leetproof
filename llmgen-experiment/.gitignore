@@ -2,3 +2,6 @@
 .lloom
 .env
 .envrc
+llmgen/ArtifactSpecs/
+llmgen/ArtifactSupport/
+llmgen/ArtifactVerification/

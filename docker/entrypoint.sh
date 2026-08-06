@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-project_dir="${LLOOM_PROJECT_DIR:-/workspace/llmgen-experiment}"
+project_dir="${LEETPROOF_PROJECT_DIR:-/workspace/llmgen-experiment}"
 image_project_dir="/opt/llmgen-experiment"
 
 if [ ! -f "${project_dir}/lakefile.toml" ] && [ ! -f "${project_dir}/lakefile.lean" ]; then
@@ -22,6 +22,23 @@ cd "${project_dir}"
 
 if [ "$#" -eq 0 ]; then
     set -- --help
+fi
+
+# The reproducibility workflow needs the same seeded Lean project as LLoom but
+# has its own Python entry point and arguments.
+if [ "$1" = "specpbt" ]; then
+    shift
+    verina_dir="${project_dir}/.lloom/benchmarks/verina"
+    if [ ! -d "${verina_dir}/.git" ]; then
+        if [ -e "${verina_dir}" ]; then
+            echo "error: ${verina_dir} exists but is not a Git checkout" >&2
+            exit 2
+        fi
+        echo "Initialising the pinned Verina benchmark in ${verina_dir} ..."
+        mkdir -p "${project_dir}/.lloom/benchmarks"
+        cp -R /opt/specpbt-data/benchmarks/verina "${verina_dir}"
+    fi
+    exec python /opt/leetproof/specpbt/workflow.py "$@"
 fi
 
 # LLoom resolves relative inputs, outputs, logs, and sessions after changing to

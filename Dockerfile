@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1.7
 
-FROM ghcr.io/astral-sh/uv:python3.13-trixie-slim AS base
+FROM ghcr.io/astral-sh/uv:python3.13-trixie-slim AS system-base
 
-ARG LLOOM_UID=1000
-ARG LLOOM_GID=1000
+ARG LEETPROOF_UID=1000
+ARG LEETPROOF_GID=1000
 ARG LEAN_TOOLCHAIN=leanprover/lean4:v4.24.0
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -11,7 +11,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     UV_LINK_MODE=copy \
     PATH=/opt/leetproof/.venv/bin:/opt/elan/bin:${PATH} \
     ELAN_HOME=/opt/elan \
-    LLOOM_PROJECT_DIR=/workspace/llmgen-experiment
+    LEETPROOF_PROJECT_DIR=/workspace/llmgen-experiment
 
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends \
@@ -25,6 +25,17 @@ RUN apt-get update \
         unzip \
         zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
+
+FROM system-base AS specpbt-benchmarks
+
+# Bake the exact historical Verina revision used by the Spec-PBT study. Clever
+# is installed from its pinned Git revision as part of the uv dependency layer.
+RUN git clone https://github.com/sunblaze-ucb/verina.git \
+        /opt/specpbt-data/benchmarks/verina \
+    && git -C /opt/specpbt-data/benchmarks/verina checkout --detach \
+        643ed3cab89f37a243720640206de3b178730534
+
+FROM system-base AS base
 
 RUN curl --proto '=https' --tlsv1.2 -sSf \
         https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
@@ -41,8 +52,8 @@ RUN uv sync --frozen --no-dev --no-install-project
 # Download the semantic-search data and embedding model into the image before
 # copying the rest of the LeetProof source. This roughly 8.5 GB layer is reused
 # unless the dependency lockfile or setup implementation changes.
-RUN groupadd --gid "${LLOOM_GID}" lloom \
-    && useradd --uid "${LLOOM_UID}" --gid "${LLOOM_GID}" \
+RUN groupadd --gid "${LEETPROOF_GID}" lloom \
+    && useradd --uid "${LEETPROOF_UID}" --gid "${LEETPROOF_GID}" \
         --create-home --shell /bin/bash lloom
 COPY leetproof/cli.py ./cli.py
 ENV HOME=/home/lloom
@@ -52,6 +63,7 @@ RUN python cli.py setup
 USER root
 COPY leetproof/ /opt/leetproof/
 RUN uv sync --frozen --no-dev
+COPY specpbt/ /opt/leetproof/specpbt/
 
 FROM base AS lean-project
 
@@ -73,6 +85,8 @@ RUN lake build
 FROM leetproof AS runtime
 
 COPY --from=lean-project /opt/llmgen-experiment/ /opt/llmgen-experiment/
+COPY --from=specpbt-benchmarks --chown=lloom:lloom \
+     /opt/specpbt-data/ /opt/specpbt-data/
 COPY docker/entrypoint.sh /usr/local/bin/lloom-entrypoint
 RUN chmod 0755 /usr/local/bin/lloom-entrypoint \
     && mkdir -p /workspace/llmgen-experiment \

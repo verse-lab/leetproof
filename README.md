@@ -20,11 +20,41 @@ Inside the directory, the artefacts are split across the following directories.
 
 ### Running LeetProof
 
-For the containerized artifact-evaluation workflow, including prebuilt
-Mathlib/LeanExplore layers, no-key smoke tests, and host-persisted pipeline
-outputs, see [DOCKER.md](DOCKER.md). `docker compose build leetproof` performs
-all dependency and search-data setup; no separate container setup command is
-needed.
+#### Docker setup
+
+The recommended artifact-evaluation workflow uses Docker. It requires Docker
+Engine or Docker Desktop with Compose v2, internet access for the initial
+build, and approximately 30 GB of free space for the image and build cache.
+
+From the repository root, build the complete environment with:
+
+```bash
+docker compose build leetproof
+```
+
+The image includes the LeetProof Python environment, Lean and Mathlib, the
+built Lean project, semantic-search data, embedding model, and pinned Spec-PBT
+benchmark inputs. No separate container setup command is required. Subsequent
+builds reuse Docker's cached layers.
+
+On Linux, pass your host UID and GID so generated files remain editable:
+
+```bash
+LEETPROOF_UID="$(id -u)" LEETPROOF_GID="$(id -g)" \
+  docker compose build leetproof
+```
+
+Validate the image without an API key:
+
+```bash
+docker compose run --rm --entrypoint sh leetproof -c 'lean --version && lake build'
+docker compose run --rm leetproof search --info
+```
+
+The host `llmgen-experiment/` directory is mounted inside the container. Specs,
+implementations, proofs, logs, and sessions generated there remain available
+on the host after the container exits or is removed. API keys are passed only
+through the container environment and are not stored in the image.
 
 #### Smoke tests
 
@@ -47,7 +77,27 @@ are written under `llmgen-experiment/llmgen/SmokeTests/` on the host and remain
 available after the container exits. See [smoke-tests/README.md](smoke-tests/README.md)
 for costs, custom programs, dry runs, and all options.
 
-#### Setup
+#### Reproducing the specification-PBT results
+
+The pinned Verina/Clever workflow from the LeetProof repository is included in
+this package. It downloads the exact historical benchmark revisions cited in
+the feedback reports, converts their specifications, and supports a three-case
+smoke test, the complete feedback-case set, or the full benchmark scan:
+
+```bash
+./specpbt.sh convert
+./specpbt.sh run smoke
+```
+
+Generated Lean modules appear under
+`llmgen-experiment/llmgen/ArtifactVerification/`, and JSON reports appear under
+`specpbt-data/results/`; both remain available on the host after Docker exits.
+This workflow does not invoke an LLM or require an API key. See
+[specpbt/README.md](specpbt/README.md) for the pinned revisions, full runs,
+and local execution.
+
+#### Local setup (without Docker)
+
 Run the setup script from the repository root:
 
 ```bash

@@ -97,6 +97,7 @@ def fix_header(content: str) -> str:
 
 OUTCOME_LABEL = {
     "bug":              "🐛 BUG  ",
+    "implementation_bug": "🔧 IMPL ",
     "no_bug":           "✅ OK   ",
     "synthesis_failed": "⚠️  SYN  ",
     "error":            "❌ ERR  ",
@@ -176,7 +177,7 @@ def run_batch(spec_dir: str, output_file: str, build_dir: str,
         elapsed = time.monotonic() - t0
 
         bug_case: str | None = None
-        if outcome == "bug":
+        if outcome in ("bug", "implementation_bug", "precond_bug", "postcond_bug"):
             for line in buf.getvalue().splitlines():
                 m = re.search(r"\[SPECIFICATION BUG FOUND\] on (\S+)", line)
                 if m:
@@ -211,6 +212,7 @@ def run_batch(spec_dir: str, output_file: str, build_dir: str,
         print(f"  {label}  {elapsed:6.1f}s  {pid}{suffix}")
     print(f"{'─'*64}")
     print(f"  🐛 BUG:              {counts.get('bug', 0)}")
+    print(f"  🔧 Implementation:   {counts.get('implementation_bug', 0)}")
     print(f"  ✅ OK (no bug):      {counts.get('no_bug', 0)}")
     print(f"  ⚠️  Synthesis failed: {counts.get('synthesis_failed', 0)}")
     print(f"  ❌ Error:            {counts.get('error', 0)}")

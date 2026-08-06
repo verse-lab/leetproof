@@ -21,7 +21,7 @@ dependencies = [
     "numpy>=1.24.0",
     "flagembedding>=1.2.0",
     "grandalf>=0.8",
-    "clever-bench>=1.3.0",
+    "clever-bench",
     "parsy>=2.2",
     "textual>=6.0.0",
     "lean-xplore>=0.4.3",
@@ -84,3 +84,4 @@ invalid-return-type = "ignore"
 
 [tool.uv.sources]
 pantograph = { git = "https://github.com/stanford-centaur/PyPantograph", rev = "da25cce" }
+clever-bench = { git = "https://github.com/trishullab/clever.git", rev = "603e318da2a633cf3aea3a6b2c43cc3fd0187fb7" }

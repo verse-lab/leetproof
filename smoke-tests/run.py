@@ -101,13 +101,13 @@ Examples:
     parser.add_argument(
         "--provider",
         choices=("openai", "anthropic"),
-        default=os.environ.get("LLOOM_PROVIDER", "openai"),
-        help="LLM provider (default: LLOOM_PROVIDER or openai)",
+        default=os.environ.get("LEETPROOF_PROVIDER", "openai"),
+        help="LLM provider (default: LEETPROOF_PROVIDER or openai)",
     )
     parser.add_argument(
         "--model",
-        default=os.environ.get("LLOOM_MODEL"),
-        help="model ID (default: LLOOM_MODEL, or gpt-5.4 for OpenAI)",
+        default=os.environ.get("LEETPROOF_MODEL"),
+        help="model ID (default: LEETPROOF_MODEL, or gpt-5.4 for OpenAI)",
     )
     parser.add_argument(
         "--max-cost",
@@ -137,7 +137,7 @@ Examples:
     parser.add_argument(
         "lloom_args",
         nargs=argparse.REMAINDER,
-        metavar="-- LLOOM_ARG ...",
+        metavar="-- LEETPROOF_ARG ...",
         help="additional arguments forwarded to LLoom after a -- separator",
     )
     return parser
@@ -257,7 +257,7 @@ def main() -> None:
     if model is None and args.provider == "openai":
         model = "gpt-5.4"
     if not model:
-        parser.error("--model or LLOOM_MODEL is required for Anthropic")
+        parser.error("--model or LEETPROOF_MODEL is required for Anthropic")
     max_cost = args.max_cost
     if max_cost is None:
         max_cost = 1.0 if args.workflow == "spec" else 5.0

@@ -464,13 +464,119 @@ def check_postconditions(
 
 
 # ---------------------------------------------------------------------------
+# Implementation-vs-spec checker
+# ---------------------------------------------------------------------------
+
+def _implementation_name(content: str) -> str | None:
+    """Return the implementation defined in ``section Impl``, if it is usable.
+
+    Converted Clever files name the function ``implementation``; converted
+    Verina files keep their benchmark function name.  We deliberately skip a
+    stub containing ``sorry``: testing an opaque placeholder would report the
+    behaviour of ``sorry``, not a benchmark implementation.
+    """
+    section = re.search(r"section\s+Impl\b(.*?)end\s+Impl", content, re.DOTALL)
+    if not section or "sorry" in section.group(1):
+        return None
+    definition = re.search(r"^\s*def\s+([A-Za-z_]\w*)\b", section.group(1), re.MULTILINE)
+    return definition.group(1) if definition else None
+
+
+def _implementation_parameter_binders(case_id: str, vars_in_case: list) -> tuple[str, str]:
+    """Recover source parameter names/types from the generated test bindings."""
+    binders: list[str] = []
+    args: list[str] = []
+    prefix = f"{case_id}_"
+    for test_name, typ, _ in _param_vars(vars_in_case):
+        name = test_name[len(prefix):] if test_name.startswith(prefix) else test_name
+        binders.append(f"({name} : {typ})")
+        args.append(name)
+    return " ".join(binders), " ".join(args)
+
+
+def check_implementation_postcondition(
+    content: str,
+    test_cases: dict,
+    valid_cases: list,
+    base: str,
+    output_file: str,
+    build_dir: str,
+    module: str,
+) -> tuple[str, str]:
+    """Property-test that executing an implementation satisfies its postcondition.
+
+    This is distinct from the expected-output and uniqueness phases.  It draws
+    fresh inputs with Plausible, evaluates the benchmark implementation, then
+    checks its concrete result against the postcondition.  This is the phase
+    that exposes Clever #9 on negative lists.
+    """
+    implementation = _implementation_name(content)
+    if implementation is None or not valid_cases:
+        return "ok", ""
+
+    binders, args = _implementation_parameter_binders(valid_cases[0], test_cases[valid_cases[0]])
+    if not binders:
+        return "ok", ""
+    proposition = (
+        f"precondition {args} →\n"
+        f"  postcondition {args} ({implementation} {args})"
+    )
+
+    print(f"Checking implementation `{implementation}` against postcondition...", flush=True)
+    for pass_name, suffixes in [("pass 1", [""]), ("pass 2", ["''"]), ("pass 3", ["'"])]:
+        num_inst = NUM_INST
+        while True:
+            tactic_configs = _precond_tactic_configs(num_inst, suffixes)
+            # There is no fixed expected output here: Plausible generates the
+            # input binders, runs the function, and checks the resulting value.
+            verification = generate_verification_defs(
+                {"implementation": []}, ["implementation"],
+                "implementation_postcondition",
+                lambda *_: binders,
+                lambda *_: proposition,
+                tactic_configs,
+            )
+            output_content = base + "\n\nset_option maxHeartbeats 500000\n\n" + verification
+            with open(output_file, "w", encoding="utf-8") as f:
+                f.write(output_content)
+            try:
+                stdout, stderr, _ = run_lake_build(build_dir, module)
+                break
+            except subprocess.TimeoutExpired:
+                next_num_inst = num_inst // 10
+                if next_num_inst < 300:
+                    print(f"  [{pass_name}] Timeout (numInst={num_inst}), skipping", flush=True)
+                    stdout = stderr = ""
+                    break
+                print(f"  [{pass_name}] Timeout (numInst={num_inst}), retrying with numInst={next_num_inst}...", flush=True)
+                num_inst = next_num_inst
+
+        counterex = check_for_counter_example(stdout, stderr)
+        if counterex:
+            for line in counterex:
+                print(f"    {line}")
+            detail = (
+                f"Implementation `{implementation}` produced an output that violates the postcondition.\n"
+                "Counter-example:\n" + "\n".join(f"  {line}" for line in counterex)
+            )
+            print("\n[IMPLEMENTATION BUG FOUND]", flush=True)
+            return "implementation_bug", detail
+        if not check_for_synthesis_failure(stdout, stderr):
+            # The property was testable and no witness was found in this pass.
+            return "ok", ""
+
+    return "synthesis_failed", ""
+
+
+# ---------------------------------------------------------------------------
 # Main checker
 # ---------------------------------------------------------------------------
 
 def generate_and_check(input_file: str, output_file: str, build_dir: str) -> tuple[str, str]:
     """Run all PBT checks and return (result, detail).
 
-    result is one of: 'no_bug', 'bug', 'precond_bug', 'postcond_bug', 'synthesis_failed'.
+    result is one of: 'no_bug', 'bug', 'implementation_bug', 'precond_bug',
+    'postcond_bug', 'synthesis_failed'.
     detail is a human-readable explanation (empty string when no bug found).
     """
     with open(input_file, "r", encoding="utf-8") as f:
@@ -492,6 +598,16 @@ def generate_and_check(input_file: str, output_file: str, build_dir: str) -> tup
     os.makedirs(os.path.dirname(os.path.abspath(output_file)), exist_ok=True)
 
     valid_cases = [c for c in rec_cases if c in test_cases]
+
+    # ------------------------------------------------------------------
+    # Phase -1: execute the implementation on generated inputs and check
+    # whether its concrete output satisfies the postcondition.
+    # ------------------------------------------------------------------
+    status, detail = check_implementation_postcondition(
+        content, test_cases, valid_cases, base, output_file, build_dir, module
+    )
+    if status == "implementation_bug":
+        return status, detail
 
     # ------------------------------------------------------------------
     # Phase 0: check preconditions
@@ -622,8 +738,9 @@ def main():
         result, detail = generate_and_check(args.input_file, args.output_file, args.build_dir)
         if detail:
             print(detail, flush=True)
-        # exit codes: 0 = no bug, 1 = bug, 2 = error, 3 = synthesis failed, 4 = precond bug, 5 = postcond bug
-        if result == "bug":
+        # exit codes: 0 = no bug, 1 = spec/implementation bug, 2 = error,
+        # 3 = synthesis failed, 4 = precondition bug, 5 = postcondition bug
+        if result in ("bug", "implementation_bug"):
             sys.exit(1)
         elif result == "synthesis_failed":
             sys.exit(3)

@@ -6,7 +6,7 @@
 **/__pycache__
 **/*.pyc
 **/.DS_Store
-artifact-data
+specpbt-data
 build
 dist
 output

@@ -1,20 +1,24 @@
 services:
   leetproof:
-    image: lloom-ase2026-artifact:latest
+    image: leetproof-ase2026-artifact:latest
     build:
       context: .
       args:
-        LLOOM_UID: ${LLOOM_UID:-1000}
-        LLOOM_GID: ${LLOOM_GID:-1000}
+        LEETPROOF_UID: ${LEETPROOF_UID:-1000}
+        LEETPROOF_GID: ${LEETPROOF_GID:-1000}
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      LEETPROOF_SPECPBT_DATA_DIR: /workspace/specpbt-data
     stdin_open: true
     tty: true
     volumes:
       # Generated Lean files, results, logs, and sessions persist in the
       # artifact directory after the container exits.
       - ./llmgen-experiment:/workspace/llmgen-experiment
+      # Machine-readable PBT reports persist on the host across disposable
+      # Spec-PBT workflow containers; benchmark inputs are baked into the image.
+      - ./specpbt-data:/workspace/specpbt-data
       # Keep pricing corrections immediately visible without rebuilding the
       # image. The image still contains a fallback copy of this file.
       - ./leetproof/config/model_pricing.json:/opt/leetproof/config/model_pricing.json:ro
