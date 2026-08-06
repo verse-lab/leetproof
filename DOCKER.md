@@ -1,8 +1,9 @@
 # Docker workflow for artifact evaluation
 
-The image contains the pinned LLoom Python environment, Lean 4.24.0, and a
-built copy of the artifact's Lean project. Docker Compose bind-mounts the host
-`llmgen-experiment/` directory at `/workspace/llmgen-experiment`.
+The image contains the pinned LeetProof Python environment, Lean 4.24.0, a built
+copy of the artifact's Lean project, and the semantic-search assets used by
+LeetProof (LeanExplore and the BGE embedding model). Docker Compose bind-mounts
+the host `llmgen-experiment/` directory at `/workspace/llmgen-experiment`.
 
 This means generated Lean files, result JSON, logs, and resumable `.lloom`
 sessions remain in the artifact directory after a container exits.
@@ -10,7 +11,7 @@ sessions remain in the artifact directory after a container exits.
 ## Requirements
 
 - Docker Engine or Docker Desktop with Compose v2
-- About 20 GB of free disk space for the image and build cache
+- About 30 GB of free disk space for the image and build cache
 - Internet access while building the image
 - An API key for any command that invokes an LLM
 
@@ -22,6 +23,7 @@ From the artifact root:
 docker compose build leetproof
 docker compose run --rm --entrypoint sh leetproof -c 'lean --version && lake build'
 docker compose run --rm leetproof search --info
+docker compose run --rm leetproof search "commutativity of addition" --limit 3 --no-verify
 ```
 
 On Linux, build with your host UID and GID if they are not 1000, so generated
@@ -31,30 +33,37 @@ files remain editable outside Docker:
 LLOOM_UID="$(id -u)" LLOOM_GID="$(id -g)" docker compose build leetproof
 ```
 
-## One-time semantic-search setup
+## Cached heavyweight build layers
 
-The full pipeline uses LeanExplore plus the BGE embedding model. Download these
-assets once with:
+The Docker build performs all time-consuming setup ahead of time:
 
-```bash
-docker compose run --rm leetproof setup
-```
+- Python dependencies are cached from `leetproof/uv.lock`.
+- LeanExplore data and the BGE embedding model are downloaded into a dedicated
+  image layer keyed by the Python dependency files and `leetproof/cli.py`.
+- Lean/Mathlib packages and their binary cache are downloaded in a layer keyed
+  only by `lean-toolchain`, `lakefile.toml`, and `lake-manifest.json`.
+- The artifact's Lean sources are copied and built only after those dependency
+  layers.
 
-LeanExplore writes to `/home/lloom/.lean_explore`, while Hugging Face writes the
-model to `/home/lloom/.cache/huggingface`. Compose persists the entire
-`/home/lloom` directory in the named `lloom-home` volume, so later disposable
-containers reuse both downloads.
+LeetProof/search setup and the Lean project are independent multi-stage build
+branches. Changes to Python source therefore do not invalidate the Mathlib
+download, and changes to Lean source do not invalidate the LeanExplore/model
+download. Docker may build the two branches concurrently.
 
-You can verify persistence without invoking an LLM:
+Consequently, normal edits to LeetProof or Lean source files do not repeat the
+large downloads. Changing a lockfile or manifest intentionally invalidates the
+corresponding layer. A clean first build downloads roughly 8.5 GB of search
+assets in addition to the Lean dependencies, so it can take a while; subsequent
+builds reuse Docker's layer cache.
+
+The resulting image is self-contained for Lean builds and semantic search; no
+runtime `lloom-agent setup` step or persistent home volume is required. You can
+verify this without invoking an LLM:
 
 ```bash
 docker compose run --rm leetproof search --info
 docker compose run --rm leetproof search "commutativity of addition" --limit 3 --no-verify
 ```
-
-The initial setup downloads roughly 8.5 GB. For an entirely offline artifact,
-the final release should also provide an exported pre-populated volume or bake
-these assets into a separate image layer.
 
 ## Run the pipeline and persist its output
 
@@ -96,6 +105,6 @@ For three ready-to-run, cost-capped agent examples, see
 | Generated specifications and programs | `llmgen-experiment/llmgen/` | Host bind mount |
 | Sessions, DBOS database, and logs | `llmgen-experiment/.lloom/` | Host bind mount |
 | Lean build products | `llmgen-experiment/.lake/` | Host bind mount, seeded from image |
-| LeanExplore and embedding-model caches | `/home/lloom` | Named Docker volume |
+| LeanExplore and embedding-model caches | `/home/lloom` | Image layers |
 | Model pricing | `leetproof/config/model_pricing.json` | Read-only host bind mount; no rebuild needed |
 | API keys | Process environment | Not stored by this setup |

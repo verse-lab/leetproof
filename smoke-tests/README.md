@@ -7,8 +7,10 @@ Run `--help` to see every problem, workflow, option, and example:
 ./smoke-tests/run.py --help
 ```
 
-After building the image and completing the one-time setup, export a provider
-key and select a problem and workflow:
+The Docker build includes the LeetProof environment, Lean/Mathlib cache,
+LeanExplore data, and embedding model, so no separate setup command is needed.
+After building the image, export a provider key and select a problem and
+workflow:
 
 ```bash
 export OPENAI_API_KEY="..."

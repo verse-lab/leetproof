@@ -20,8 +20,32 @@ Inside the directory, the artefacts are split across the following directories.
 
 ### Running LeetProof
 
-For the containerized artifact-evaluation workflow, including no-key smoke
-tests and host-persisted pipeline outputs, see [DOCKER.md](DOCKER.md).
+For the containerized artifact-evaluation workflow, including prebuilt
+Mathlib/LeanExplore layers, no-key smoke tests, and host-persisted pipeline
+outputs, see [DOCKER.md](DOCKER.md). `docker compose build leetproof` performs
+all dependency and search-data setup; no separate container setup command is
+needed.
+
+#### Smoke tests
+
+The repository includes cost-capped agent smoke tests for specification
+generation, Velvet implementation generation, and standalone Lean synthesis.
+After building the Docker image and exporting a provider key, run them from the
+repository root:
+
+```bash
+export OPENAI_API_KEY="..."
+
+./smoke-tests/run.py --problem single-number --workflow spec
+./smoke-tests/run.py --problem single-number --workflow velvet
+./smoke-tests/run.py --problem single-number --workflow lean
+```
+
+Bundled problems are `single-number`, `contains-duplicate`, and
+`is-subsequence`. Generated `Spec.lean`, `Impl.lean`, and `LeanImpl.lean` files
+are written under `llmgen-experiment/llmgen/SmokeTests/` on the host and remain
+available after the container exits. See [smoke-tests/README.md](smoke-tests/README.md)
+for costs, custom programs, dry runs, and all options.
 
 #### Setup
 Run the setup script from the repository root:

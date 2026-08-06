@@ -18,9 +18,3 @@ services:
       # Keep pricing corrections immediately visible without rebuilding the
       # image. The image still contains a fallback copy of this file.
       - ./leetproof/config/model_pricing.json:/opt/leetproof/config/model_pricing.json:ro
-      # LeanExplore data and Hugging Face models downloaded by `setup` persist
-      # across disposable `docker compose run --rm` containers.
-      - lloom-home:/home/lloom
-
-volumes:
-  lloom-home:
