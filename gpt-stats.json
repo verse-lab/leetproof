@@ -86,7 +86,7 @@
     "dummy_invariant": false,
     "proof": "completed",
     "dafny_synth": "N/A",
-    "lean_impl_proof": "partial/aristotle-proven",
+    "lean_impl_proof": "partial/aristotle-failure",
     "velvet_synth_verdict": "e2e-verified"
   },
   "1574_shortest-subarray-to-be-removed-to-make-array-sorted": {
@@ -158,7 +158,7 @@
     "dummy_invariant": false,
     "proof": "partial/aristotle-proven",
     "dafny_synth": "N/A",
-    "lean_impl_proof": "possible-env-issue",
+    "lean_impl_proof": "completed",
     "velvet_synth_verdict": "proof-fail (ari-verified)"
   },
   "2161_partition-array-according-to-given-pivot": {

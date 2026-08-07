@@ -4,7 +4,7 @@ LLM-powered verification agent for generating and verifying formal programs in *
 
 ## Overview
 
-LLoom Agent transforms natural language problem descriptions into fully verified formal programs through a 5-stage pipeline:
+LeetProof Agent transforms natural language problem descriptions into fully verified formal programs through a 5-stage pipeline:
 
 1. **specgen** - Generate formal Lean specification from problem description
 2. **specvalid** - Validate specification with concrete examples

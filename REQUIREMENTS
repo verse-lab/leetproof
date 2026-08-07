@@ -1,0 +1,12 @@
+## Storage Requirement
+
+-Roughly 30GB of storage space
+
+## Software Requirement
+
+- Docker
+
+## Time Requirement
+
+- The smoke tests for certified synthesis have 3 programs (each has spec generation workflow, velvet workflow and lean workflow). If one wants to run all variants, then you'd need to run 9 workflows. Each run takes roughly 30 minutes.
+- The specification PBT smoke tests also should run in less than an hour.

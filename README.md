@@ -3,6 +3,8 @@
 This directory contains two subdirectories.
 
 - **leetproof** : This has the code for the tool.
+    - `./leetproof/prompts/` has all the prompts used for the agents.
+    - `./leetproof/agents/` has the agent code for various agent we presented in the paper.
 - **llmgen-experiment**: This contains some extensions to Loom itself and the
   experiment results. See the final section for the results.
 
@@ -71,7 +73,7 @@ through the container environment and are not stored in the image.
 The repository includes cost-capped agent smoke tests for specification
 generation, Velvet implementation generation, and standalone Lean synthesis.
 After building the Docker image and exporting a provider key, run them from the
-repository root:
+repository root (one by one after completion):
 
 ```bash
 export OPENAI_API_KEY="..."
@@ -81,12 +83,17 @@ export OPENAI_API_KEY="..."
 ./smoke-tests/run.py --problem single-number --workflow lean
 ```
 
-Bundled problems are `single-number`, `contains-duplicate`, and
+Bundled problems for smoke tests are `single-number`, `contains-duplicate`, and
 `is-subsequence`. The programs are choosen at random from from what we used for
 our experiments for the paper. Generated `Spec.lean`, `Impl.lean`, and
 `LeanImpl.lean` files are written under `llmgen-experiment/llmgen/SmokeTests/`
-on the host and remain available after the container exits. See
-[smoke-tests/README.md](smoke-tests/README.md) for costs, custom programs, dry
+on the host and remain available after the container exits. You can verify 
+whether they were proven fully or partially by checking the file: if it has 
+sorry or some commented out error, then partially proven else it would be 
+fully proven. In case of any other form of termination, you can see the error 
+messages printed in the terminal.
+
+See [smoke-tests/README.md](smoke-tests/README.md) for costs, **custom programs**, dry
 runs, and all options.
 
 It is important to understand that the time for each command to run may vary due
@@ -99,7 +106,8 @@ generating too many verification conditions for velvet, etc.
 **NOTE**: The default model is `gpt-5.2` (the one used for experiments in the
 paper), but currently newer and more advanced GPT (and Claude) models are also
 available. You may pass in `--provider <openai|anthropic> --model <model-name>`
-flag to override the default one.
+flag to override the default one. Using a newer model is recommended as they'll 
+generally be faster and more intelligent.
 
 #### Reproducing full results from paper
 
