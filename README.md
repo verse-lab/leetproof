@@ -14,6 +14,22 @@ results. See the final section for the complete run results.
 
 ### Running LeetProof
 
+#### Using Provided Docker Tar
+
+In order to load the provided `leetproof-ase2026-artifact.tar.gz`, please run the following command.
+
+``` bash
+gzip -dc leetproof-ase2026-artifact.tar.gz | docker load
+```
+
+This should take roughly 10-15 minutes since the tar file is quite big. 
+
+Once you are done with this, you can directly move to the `"Smoke tests"` and
+`"Reproducing the specification-PBT results"` section.
+
+**NOTE**: In case you face any issues, you may try building the docker image
+yourself following the instructions from section just below.
+
 #### Docker setup
 
 The recommended artifact-evaluation workflow uses Docker. It requires Docker
@@ -70,6 +86,11 @@ Bundled problems are `single-number`, `contains-duplicate`, and
 are written under `llmgen-experiment/llmgen/SmokeTests/` on the host and remain
 available after the container exits. See [smoke-tests/README.md](smoke-tests/README.md)
 for costs, custom programs, dry runs, and all options.
+
+**NOTE**: The default model is `gpt-5.2` (the one used for experiments in the
+paper), but currently newer and more advanced GPT (and Claude) models are also
+available. You may pass in `--provider <openai|anthropic> --model <model-name>`
+flag to override the default one.
 
 #### Reproducing the specification-PBT results
 

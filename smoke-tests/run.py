@@ -107,7 +107,7 @@ Examples:
     parser.add_argument(
         "--model",
         default=os.environ.get("LEETPROOF_MODEL"),
-        help="model ID (default: LEETPROOF_MODEL, or gpt-5.4 for OpenAI)",
+        help="model ID (default: LEETPROOF_MODEL, or gpt-5.2 for OpenAI)",
     )
     parser.add_argument(
         "--max-cost",
@@ -255,7 +255,7 @@ def main() -> None:
 
     model = args.model
     if model is None and args.provider == "openai":
-        model = "gpt-5.4"
+        model = "gpt-5.2"
     if not model:
         parser.error("--model or LEETPROOF_MODEL is required for Anthropic")
     max_cost = args.max_cost
