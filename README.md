@@ -276,7 +276,8 @@ The set contains 50 problems, with a fixed split documented in
 Supporting benchmark files:
 
 - `llmgen-experiment/llmgen/problems/` and `llmgen-experiment/llmgen/problems/REPORT.md`.
-- `llmgen-experiment/problems-stats.json` (evaluation outcomes for the 50-item set).
+- `gpt-stats.json` (evaluation outcomes for the 50-item set for GPT 5.2).
+- `opus-stats.json` (evaluation outcomes for the 25-item set for Opus 4.6).
 
 ### 4. Sections 6.2--6.4 run results
 
