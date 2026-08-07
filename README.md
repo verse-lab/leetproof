@@ -1,4 +1,4 @@
-## LeetProof
+# LeetProof
 
 This directory contains two subdirectories.
 
@@ -6,15 +6,15 @@ This directory contains two subdirectories.
 - **llmgen-experiment**: This contains some extensions to Loom itself and the
   experiment results. See the final section for the results.
 
-### llmgen-experiment
+## llmgen-experiment
 
 This directory contains some extensions to Loom itself
 (`llmgen-experiment/Extensions/`) and the artefacts used to produce the paper's
 results. See the final section for the complete run results.
 
-### Running LeetProof
+## Running LeetProof
 
-#### Using Provided Docker Tar
+### Using Provided Docker Tar
 
 In order to load the provided `leetproof-ase2026-artifact.tar.gz`, please run the following command.
 
@@ -30,7 +30,7 @@ Once you are done with this, you can directly move to the `"Smoke tests"` and
 **NOTE**: In case you face any issues, you may try building the docker image
 yourself following the instructions from section just below.
 
-#### Docker setup
+### Docker setup
 
 The recommended artifact-evaluation workflow uses Docker. It requires Docker
 Engine or Docker Desktop with Compose v2, internet access for the initial
@@ -82,15 +82,35 @@ export OPENAI_API_KEY="..."
 ```
 
 Bundled problems are `single-number`, `contains-duplicate`, and
-`is-subsequence`. Generated `Spec.lean`, `Impl.lean`, and `LeanImpl.lean` files
-are written under `llmgen-experiment/llmgen/SmokeTests/` on the host and remain
-available after the container exits. See [smoke-tests/README.md](smoke-tests/README.md)
-for costs, custom programs, dry runs, and all options.
+`is-subsequence`. The programs are choosen at random from from what we used for
+our experiments for the paper. Generated `Spec.lean`, `Impl.lean`, and
+`LeanImpl.lean` files are written under `llmgen-experiment/llmgen/SmokeTests/`
+on the host and remain available after the container exits. See
+[smoke-tests/README.md](smoke-tests/README.md) for costs, custom programs, dry
+runs, and all options.
+
+It is important to understand that the time for each command to run may vary due
+to the non-deterministic nature of agentic setups. Generally, it should take
+less than half an hour. There are various factors that affect the time: LLM's
+own reasoning time, the output produced may end up timing out Lean sometimes or
+generating too many verification conditions for velvet, etc.
+
 
 **NOTE**: The default model is `gpt-5.2` (the one used for experiments in the
 paper), but currently newer and more advanced GPT (and Claude) models are also
 available. You may pass in `--provider <openai|anthropic> --model <model-name>`
 flag to override the default one.
+
+#### Reproducing full results from paper
+
+*It may take days for the entire pipeline to run for all the programs part of
+our problem set and quite a lot of tokens(and money)*
+
+You can use the custom flag from the smoke tests script and use appropriate
+paths to run any problem from the problem set (which is at
+`llmgen-experiment/llmgen/problems/` directory). However, due to the
+non-deterministic nature of LLMs, reproducability of the results is not
+guaranteed.
 
 #### Reproducing the specification-PBT results
 
@@ -111,7 +131,9 @@ This workflow does not invoke an LLM or require an API key. See
 [specpbt/README.md](specpbt/README.md) for the pinned revisions, full runs,
 and local execution.
 
-#### Local setup (without Docker)
+
+
+### Local setup (without Docker)
 
 Run the setup script from the repository root:
 
@@ -192,7 +214,7 @@ bash ./leetproof.sh lean-synth \
   --model <model>
 ```
 
-#### Cost limits and supported pricing
+### Cost limits and supported pricing
 
 Append `--max-cost 5` to stop a run when its tracked provider cost reaches five
 US dollars. Cost limits work only when the selected model matches an entry in
