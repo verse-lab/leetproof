@@ -1,10 +1,14 @@
 ## Storage Requirement
 
--Roughly 30GB of storage space
+- At least 60 GB of free disk space is recommended.
 
 ## Software Requirement
 
-- Docker
+- Docker Engine or Docker Desktop with Compose v2
+- Load the architecture-specific archive as documented in `README.md`; every
+  subsequent evaluation command is architecture-independent.
+- If Docker denies access to `/var/run/docker.sock`, prefix Docker and Docker
+  Compose commands with `sudo` as shown in `README.md`.
 
 ## Time Requirement
 

@@ -3,6 +3,7 @@ services:
     image: leetproof-ase2026-artifact:latest
     build:
       context: .
+      dockerfile: ${LEETPROOF_DOCKERFILE:-Dockerfile.arm64}
       args:
         LEETPROOF_UID: ${LEETPROOF_UID:-1000}
         LEETPROOF_GID: ${LEETPROOF_GID:-1000}

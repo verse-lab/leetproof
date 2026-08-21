@@ -13,10 +13,10 @@ specifications may already have been fixed.
 
 ## Prepare the pinned inputs
 
-Build the image once, then convert both pinned benchmarks:
+After completing the repository-level Docker setup in `README.md`, convert
+both pinned benchmarks:
 
 ```sh
-docker compose build leetproof
 ./specpbt.sh convert
 ```
 
@@ -40,6 +40,10 @@ postcondition.
 ```sh
 ./specpbt.sh run smoke
 ```
+
+The smoke test is expected to print findings such as
+`[IMPLEMENTATION BUG FOUND]`. This indicates that Spec-PBT found one of the
+intended counterexamples; it is not a workflow failure.
 
 Generated Lean verification modules are written beneath
 `llmgen-experiment/llmgen/ArtifactVerification/smoke/`. The machine-readable

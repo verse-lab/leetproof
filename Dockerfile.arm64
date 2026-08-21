@@ -1,0 +1,113 @@
+# syntax=docker/dockerfile:1.7
+
+# This is the ARM64 artifact definition. Use Dockerfile.amd64 for AMD64.
+FROM --platform=linux/arm64 ghcr.io/astral-sh/uv:python3.13-trixie-slim AS system-base
+
+ARG LEETPROOF_UID=1000
+ARG LEETPROOF_GID=1000
+ARG LEAN_TOOLCHAIN=leanprover/lean4:v4.24.0
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    PATH=/opt/leetproof/.venv/bin:/opt/elan/bin:${PATH} \
+    ELAN_HOME=/opt/elan \
+    LEETPROOF_PROJECT_DIR=/workspace/llmgen-experiment
+
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        curl \
+        git \
+        libgmp-dev \
+        libssl-dev \
+        pkg-config \
+        unzip \
+        zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+FROM system-base AS specpbt-benchmarks
+
+# Bake the exact historical Verina revision used by the Spec-PBT study. Clever
+# is installed from its pinned Git revision as part of the uv dependency layer.
+RUN git clone https://github.com/sunblaze-ucb/verina.git \
+        /opt/specpbt-data/benchmarks/verina \
+    && git -C /opt/specpbt-data/benchmarks/verina checkout --detach \
+        643ed3cab89f37a243720640206de3b178730534
+
+FROM system-base AS base
+
+ARG LEAN_TOOLCHAIN=leanprover/lean4:v4.24.0
+
+RUN curl --proto '=https' --tlsv1.2 -sSf \
+        https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+        | sh -s -- -y --default-toolchain "${LEAN_TOOLCHAIN}"
+
+FROM base AS leetproof
+
+ARG LEETPROOF_UID=1000
+ARG LEETPROOF_GID=1000
+
+WORKDIR /opt/leetproof
+
+# Cache the expensive Python dependency layer independently from source edits.
+COPY leetproof/pyproject.toml leetproof/uv.lock leetproof/README.md ./
+RUN uv sync --frozen --no-dev --no-install-project
+
+# Download the semantic-search data and embedding model into the image before
+# copying the rest of the LeetProof source. This roughly 8.5 GB layer is reused
+# unless the dependency lockfile or setup implementation changes.
+RUN groupadd --gid "${LEETPROOF_GID}" lloom \
+    && useradd --uid "${LEETPROOF_UID}" --gid "${LEETPROOF_GID}" \
+        --create-home --shell /bin/bash lloom
+COPY leetproof/cli.py ./cli.py
+ENV HOME=/home/lloom
+USER lloom
+RUN python cli.py setup
+
+USER root
+COPY leetproof/ /opt/leetproof/
+RUN uv sync --frozen --no-dev
+COPY specpbt/ /opt/leetproof/specpbt/
+
+FROM base AS lean-project
+
+# Fetch the pinned Lean dependencies and Mathlib binary cache in a layer keyed
+# only by the project manifests. Editing a Lean source file therefore does not
+# repeat the large package checkout/cache download.
+WORKDIR /opt/llmgen-experiment
+COPY llmgen-experiment/lean-toolchain \
+     llmgen-experiment/lakefile.toml \
+     llmgen-experiment/lake-manifest.json ./
+RUN lake exe cache get
+
+# Bake an exact, built copy of the artifact Lean project into the image. The
+# reviewer-facing project is bind-mounted at runtime; the entrypoint seeds its
+# ignored .lake directory from this copy on first use.
+COPY llmgen-experiment/ /opt/llmgen-experiment/
+RUN lake build
+
+FROM leetproof AS runtime
+
+# The runtime user must be able to reconcile Lake package metadata without
+# rebuilding dependencies or failing on the root-owned build-stage files.
+COPY --from=lean-project --chown=lloom:lloom \
+     /opt/llmgen-experiment/ /opt/llmgen-experiment/
+COPY --from=specpbt-benchmarks --chown=lloom:lloom \
+     /opt/specpbt-data/ /opt/specpbt-data/
+COPY docker/entrypoint.sh /usr/local/bin/lloom-entrypoint
+RUN chmod 0755 /usr/local/bin/lloom-entrypoint \
+    && mkdir -p /workspace/llmgen-experiment \
+    && chown -R lloom:lloom /workspace
+
+USER lloom
+
+# Verify the exact runtime copy as the exact runtime user. This also ensures
+# that any package metadata normalization is captured in the final image.
+RUN cd /opt/llmgen-experiment && lake build
+
+WORKDIR /workspace/llmgen-experiment
+
+ENTRYPOINT ["lloom-entrypoint"]
+CMD ["--help"]

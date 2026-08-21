@@ -16,52 +16,61 @@ results. See the final section for the complete run results.
 
 ## Running LeetProof
 
-### Using Provided Docker Tar
+### Load the Docker image
 
-In order to load the provided `leetproof-ase2026-artifact.tar.gz`, please run the following command.
+Use Docker Engine or Docker Desktop with Compose v2. From the repository root,
+load the archive matching your machine:
 
-``` bash
-gzip -dc leetproof-ase2026-artifact.tar.gz | docker load
+```sh
+# On ARM64 (for example, Apple Silicon or ARM Linux):
+gzip -dc leetproof-ase2026-artifact-arm64.tar.gz | docker load
+
+# On AMD64 (x86_64; for example, Intel or AMD Linux):
+gzip -dc leetproof-ase2026-artifact-amd64.tar.gz | docker load
 ```
 
-This should take roughly 10-15 minutes since the tar file is quite big. 
+Docker-related operations may require root permission. If you get a
+`permission denied` error, consider prefixing the Docker command with `sudo`.
+For example:
 
-Once you are done with this, you can directly move to the `"Smoke tests"` and
-`"Reproducing the specification-PBT results"` section.
-
-**NOTE**: In case you face any issues, you may try building the docker image
-yourself following the instructions from section just below.
-
-### Docker setup
-
-The recommended artifact-evaluation workflow uses Docker. It requires Docker
-Engine or Docker Desktop with Compose v2, internet access for the initial
-build, and approximately 30 GB of free space for the image and build cache.
-
-From the repository root, build the complete environment with:
-
-```bash
-docker compose build leetproof
+```sh
+gzip -dc leetproof-ase2026-artifact-amd64.tar.gz | sudo docker load
 ```
+
+Both archives load the image tag
+`leetproof-ase2026-artifact:latest`. All commands after this point are exactly
+the same on ARM64 and AMD64. Loading an archive can take roughly 10--15
+minutes.
+
+If you need to build the Docker image locally from source instead:
+
+```sh
+./docker-build.sh arm64   # On ARM64 (e.g. Apple Silicon, ARM Linux)
+./docker-build.sh amd64   # On AMD64 / x86_64 (e.g. Intel/AMD Linux)
+```
+
+#### Storage requirements
+
+At least 60 GB of free disk space is recommended.
 
 The image includes the LeetProof Python environment, Lean and Mathlib, the
 built Lean project, semantic-search data, embedding model, and pinned Spec-PBT
-benchmark inputs. No separate container setup command is required. Subsequent
-builds reuse Docker's cached layers.
-
-On Linux, pass your host UID and GID so generated files remain editable:
-
-```bash
-LEETPROOF_UID="$(id -u)" LEETPROOF_GID="$(id -g)" \
-  docker compose build leetproof
-```
+benchmark inputs. No separate container setup command is required.
 
 Validate the image without an API key:
 
 ```bash
-docker compose run --rm --entrypoint sh leetproof -c 'lean --version && lake build'
+# Build the project baked into the image, using its prebuilt Mathlib cache.
+docker compose run --rm --entrypoint sh leetproof \
+  -c 'cd /opt/llmgen-experiment && lean --version && lake build'
+
 docker compose run --rm leetproof search --info
 ```
+
+The `lake build` command deliberately uses `/opt/llmgen-experiment`, which is
+the fully built project stored in the image. Do not run this validation from
+the bind-mounted `/workspace/llmgen-experiment` before its cache has been
+initialized, because that can trigger a fresh Mathlib build.
 
 The host `llmgen-experiment/` directory is mounted inside the container. Specs,
 implementations, proofs, logs, and sessions generated there remain available
@@ -72,7 +81,7 @@ through the container environment and are not stored in the image.
 
 The repository includes cost-capped agent smoke tests for specification
 generation, Velvet implementation generation, and standalone Lean synthesis.
-After building the Docker image and exporting a provider key, run them from the
+After loading the Docker image and exporting a provider key, run them from the
 repository root (one by one after completion):
 
 ```bash
@@ -81,6 +90,14 @@ export OPENAI_API_KEY="..."
 ./smoke-tests/run.py --problem single-number --workflow spec
 ./smoke-tests/run.py --problem single-number --workflow velvet
 ./smoke-tests/run.py --problem single-number --workflow lean
+```
+
+The `sudo` command removes most user environment variables. If Docker requires
+root permission, explicitly pass the API key to the smoke-test command:
+
+```bash
+sudo env OPENAI_API_KEY="$OPENAI_API_KEY" \
+  ./smoke-tests/run.py --problem single-number --workflow spec
 ```
 
 Bundled problems for smoke tests are `single-number`, `contains-duplicate`, and
@@ -131,6 +148,10 @@ smoke test, the complete feedback-case set, or the full benchmark scan:
 ./specpbt.sh convert
 ./specpbt.sh run smoke
 ```
+
+The smoke test is expected to print findings such as
+`[SPECIFICATION BUG FOUND]`. This indicates that Spec-PBT found one of the
+intended counterexamples; it is not a workflow failure.
 
 Generated Lean modules appear under
 `llmgen-experiment/llmgen/ArtifactVerification/`, and JSON reports appear under

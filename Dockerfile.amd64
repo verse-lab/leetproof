@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1.7
 
-FROM ghcr.io/astral-sh/uv:python3.13-trixie-slim AS system-base
+# Pin the base stage so this artifact builds an AMD64 image even when Docker is
+# running on an ARM host.
+FROM --platform=linux/amd64 ghcr.io/astral-sh/uv:python3.13-trixie-slim AS system-base
 
 ARG LEETPROOF_UID=1000
 ARG LEETPROOF_GID=1000
@@ -84,7 +86,10 @@ RUN lake build
 
 FROM leetproof AS runtime
 
-COPY --from=lean-project /opt/llmgen-experiment/ /opt/llmgen-experiment/
+# The runtime user must be able to reconcile Lake package metadata without
+# rebuilding dependencies or failing on the root-owned build-stage files.
+COPY --from=lean-project --chown=lloom:lloom \
+     /opt/llmgen-experiment/ /opt/llmgen-experiment/
 COPY --from=specpbt-benchmarks --chown=lloom:lloom \
      /opt/specpbt-data/ /opt/specpbt-data/
 COPY docker/entrypoint.sh /usr/local/bin/lloom-entrypoint
@@ -93,6 +98,11 @@ RUN chmod 0755 /usr/local/bin/lloom-entrypoint \
     && chown -R lloom:lloom /workspace
 
 USER lloom
+
+# Verify the exact runtime copy as the exact runtime user. This also ensures
+# that any package metadata normalization is captured in the final image.
+RUN cd /opt/llmgen-experiment && lake build
+
 WORKDIR /workspace/llmgen-experiment
 
 ENTRYPOINT ["lloom-entrypoint"]
