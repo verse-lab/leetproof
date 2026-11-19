@@ -1,5 +1,8 @@
 # LeetProof
 
+Artifact for the ASE 2026 paper
+[*Certified Program Synthesis with a Multi-modal Verifier*](https://verse-lab.org/papers/leetproof-ase26.pdf).
+
 Prebuilt Docker images for this artifact are on Zenodo:
 <https://zenodo.org/records/22046794>.
 
