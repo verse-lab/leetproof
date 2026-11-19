@@ -1,12 +1,22 @@
 # LeetProof
 
-This directory contains two subdirectories.
+Prebuilt Docker images for this artifact are on Zenodo:
+<https://zenodo.org/records/22046794>.
 
-- **leetproof** : This has the code for the tool.
-    - `./leetproof/prompts/` has all the prompts used for the agents.
-    - `./leetproof/agents/` has the agent code for various agent we presented in the paper.
-- **llmgen-experiment**: This contains some extensions to Loom itself and the
+Repository layout:
+
+- **leetproof/**: the tool.
+    - `leetproof/prompts/` has all the prompts used for the agents.
+    - `leetproof/agents/` has the code for the agents presented in the paper.
+- **llmgen-experiment/**: the Lean project, some extensions to Loom, and the
   experiment results. See the final section for the results.
+- **specpbt/**, `specpbt.sh`, `specpbt-data/`: the specification-PBT workflow
+  and its output directory.
+- **smoke-tests/**: cost-capped smoke tests for the agent pipeline.
+- **docker/**, `Dockerfile.{amd64,arm64}`, `docker-compose.yml`,
+  `docker-build.sh`, `docker-setup.sh`, `leetproof.sh`: Docker setup and
+  wrappers.
+- `setup.sh`: local setup without Docker.
 
 ## llmgen-experiment
 
@@ -18,8 +28,9 @@ results. See the final section for the complete run results.
 
 ### Load the Docker image
 
-Use Docker Engine or Docker Desktop with Compose v2. From the repository root,
-load the archive matching your machine:
+Use Docker Engine or Docker Desktop with Compose v2. Download the archive
+matching your machine from [Zenodo](https://zenodo.org/records/22046794) into
+the repository root, then load it:
 
 ```sh
 # On ARM64 (for example, Apple Silicon or ARM Linux):
@@ -48,6 +59,9 @@ If you need to build the Docker image locally from source instead:
 ./docker-build.sh arm64   # On ARM64 (e.g. Apple Silicon, ARM Linux)
 ./docker-build.sh amd64   # On AMD64 / x86_64 (e.g. Intel/AMD Linux)
 ```
+
+`./docker-setup.sh <arm64|amd64>` does either step for you: it loads the
+archive if it is in the repository root and builds from source otherwise.
 
 #### Storage requirements
 
@@ -101,7 +115,7 @@ sudo env OPENAI_API_KEY="$OPENAI_API_KEY" \
 ```
 
 Bundled problems for smoke tests are `single-number`, `contains-duplicate`, and
-`is-subsequence`. The programs are choosen at random from from what we used for
+`is-subsequence`. The programs are chosen at random from what we used for
 our experiments for the paper. Generated `Spec.lean`, `Impl.lean`, and
 `LeanImpl.lean` files are written under `llmgen-experiment/llmgen/SmokeTests/`
 on the host and remain available after the container exits. You can verify 
@@ -134,7 +148,7 @@ our problem set and quite a lot of tokens(and money)*
 You can use the custom flag from the smoke tests script and use appropriate
 paths to run any problem from the problem set (which is at
 `llmgen-experiment/llmgen/problems/` directory). However, due to the
-non-deterministic nature of LLMs, reproducability of the results is not
+non-deterministic nature of LLMs, reproducibility of the results is not
 guaranteed.
 
 #### Reproducing the specification-PBT results

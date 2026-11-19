@@ -1,0 +1,9 @@
+# Docker image tarballs and archives are distributed via Zenodo, not git
+*.tar.gz
+*.zip
+
+# Python / tooling caches
+__pycache__/
+*.pyc
+.ruff_cache/
+.DS_Store
