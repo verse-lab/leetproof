@@ -11,8 +11,8 @@ Repository layout:
 - **leetproof/**: the tool.
     - `leetproof/prompts/` has all the prompts used for the agents.
     - `leetproof/agents/` has the code for the agents presented in the paper.
-- **llmgen-experiment/**: the Lean project, some extensions to Loom, and the
-  experiment results. See the final section for the results.
+- **llmgen-experiment/**: the Lean project, some extensions to Loom
+  (`llmgen-experiment/Extensions/`), and the experiment results. See the final section for the results.
 - **specpbt/**, `specpbt.sh`, `specpbt-data/`: the specification-PBT workflow
   and its output directory.
 - **smoke-tests/**: cost-capped smoke tests for the agent pipeline.
@@ -20,12 +20,6 @@ Repository layout:
   `docker-build.sh`, `docker-setup.sh`, `leetproof.sh`: Docker setup and
   wrappers.
 - `setup.sh`: local setup without Docker.
-
-## llmgen-experiment
-
-This directory contains some extensions to Loom itself
-(`llmgen-experiment/Extensions/`) and the artefacts used to produce the paper's
-results. See the final section for the complete run results.
 
 ## Running LeetProof
 

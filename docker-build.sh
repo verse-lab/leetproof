@@ -24,7 +24,7 @@ esac
 echo "Building the LeetProof ${architecture} artifact image (${dockerfile}) ..."
 export LEETPROOF_DOCKERFILE="${dockerfile}"
 
-# Match generated-file ownership to the reviewer automatically. Explicit
+# Match generated-file ownership to the host user automatically. Explicit
 # environment values still take precedence when a different mapping is needed.
 : "${LEETPROOF_UID:=$(id -u)}"
 : "${LEETPROOF_GID:=$(id -g)}"

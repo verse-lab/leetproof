@@ -83,7 +83,7 @@ COPY llmgen-experiment/lean-toolchain \
 RUN lake exe cache get
 
 # Bake an exact, built copy of the artifact Lean project into the image. The
-# reviewer-facing project is bind-mounted at runtime; the entrypoint seeds its
+# host project is bind-mounted at runtime; the entrypoint seeds its
 # ignored .lake directory from this copy on first use.
 COPY llmgen-experiment/ /opt/llmgen-experiment/
 RUN lake build
